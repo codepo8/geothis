@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">  
+  <title>Geo This popup</title>
+<style>
+html,body{background:#fff;color:#333;font-family:calibri,arial,sans-serif;}
+*{font-size:100%;margin:0;padding:0;}
+ol{margin:1em;}
+ol li{margin:0 0 .5em 1em;}
+#ft{clear:both;font-size:80%;color:#999;text-align:right;}
+h1{padding:0 10px 0 34px;background:url(icon-32.png) center left no-repeat #69c;-webkit-box-shadow: 5px 5px 7px rgba(33,33,33,.7);color:#fff;font-size:120%;font-weight:bold;line-height:32px;-webkit-border-radius:5px;}
+.locations img{-webkit-border-radius:10px;display:block;margin:1em 0;}
+#doc{width:400px;padding:2em;}
+#geocontainer p{margin:2em 0;font-weight:bold;}
+.error{color:#c00;}
+</style>
+</head>
+<body>
+<!-- <textarea id="debug"></textarea> -->
+<div id="doc">
+  <h1>Geographical locations:</h1>
+  <div id="geocontainer"><p>Loading&hellip;</p></div>
+  <p id="ft">Powered by: Google Maps, Yahoo Placemaker and YQL.</p>
+</div>
+<script>
+chrome.tabs.executeScript(null, {file: "content_script.js"});
+chrome.extension.onConnect.addListener(function(port) {
+  if (port.name != 'getgeo'){return;}
+  port.onMessage.addListener(function(data){
+    if (data.command == "geo") {
+      if(data.selection !== ''){
+        postgeo(data.selection,null);
+      } else {
+        postgeo('',data.loc);
+      }
+    } 
+  });
+});
+function postgeo(selection,url){  
+  if(url){
+    var yql = 'select * from geo.placemaker where '+
+              'documentURL ="'+url+
+              '" and documentType="text/html" and appid=""';
+  } else {
+    var yql = 'select * from geo.placemaker where '+
+              'documentContent ="'+selection+
+              '" and documentType="text/plain" and appid=""';
+  }
+  var url = 'http://query.yahooapis.com/v1/public/yql?q='+
+             encodeURIComponent(yql)+'&format=json';
+             
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4) {
+      var resp = JSON.parse(xhr.responseText);
+      var badge = render(resp);
+      var c = document.getElementById('geocontainer');
+      if(badge!==''){
+        c.innerHTML = badge;
+      } else {
+        c.innerHTML = '<p class="error">Sorry, can\'t find any '+
+                      'locations in that text :(</p>';
+      }
+    }
+  }
+  xhr.send();
+}
+function render(data){
+  var badge = '';
+  if(data.query.results && data.query.results.matches &&  
+     data.query.results.matches.match){
+    var results = data.query.results.matches.match;
+    var markers = '';
+    var locs = '<ol>';
+    if(!results.length){
+      addto(results,0);
+    } else {
+      for(var i=0,j=results.length;i<j;i++){
+        addto(results[i],i);
+      }
+    } 
+    var url = 'http://maps.google.com/maps/api/staticmap'+
+              '?sensor=false'+
+              '&size='+400+'x'+200+'&maptype=roadmap'+
+              '&key='+'ABQIAAAAijZqBZcz-rowoXZC1tt9iRT2yXp_'+
+              'ZAY8_ufC3CFXhHIE1NvwkxQQBCaF1R_k1GBJV5uDLhAKaTePyQ'+
+               markers;
+    locs += '</ol>';
+    badge = '<div class="locations">'+
+            '<img src="'+url+'" alt="Map">'+locs+
+            '</div>';
+  }
+  function addto(results,i){
+      var found = results.reference.text;
+      var location = results.place.name;
+      var lat = results.place.centroid.latitude;
+      var lon = results.place.centroid.longitude;
+      markers += '&markers=color:blue|label:'+(i+1)+'|'+lat+','+lon;
+      locs += '<li>'+location+'</li>';
+    }
+  return badge;
+}
+</script>
+</body>
+</html>

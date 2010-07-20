@@ -1,0 +1,23 @@
+﻿{
+  "update_url":"http://icant.co.uk/geothis/autocopy_updates.xml",
+  "name": "Geo this (beta)",
+  "version": "0.9",
+  "description": "Analyse the content of a web site and see it as a map. If you select text you only analyse that part.",
+  "browser_action": {
+    "default_icon": "icon-16.png",
+    "default_title": "Geo this!",
+    "default_popup": "results.html"  
+  },
+  "permissions": [ 
+    "tabs",
+    "http://*/",
+    "https://*/", 
+    "http://*.yahooapis.com/*"
+  ],  
+  "icons": {  
+    "128": "icon-128.png",
+    "48":  "icon-64.png", 
+    "32":  "icon-32.png", 
+    "16":  "icon-16.png"
+  }
+}
