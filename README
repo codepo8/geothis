@@ -1,0 +1,8 @@
+Geo This! is an extension for Google Chrome that turns web sites into Maps by ananalysing the content. If you highlight a piece of text first only that one gets analysed.
+
+You can see it in action at http://icant.co.uk/geothis
+
+Geo This uses YQL, Yahoo Placemaker and the Google Static Maps API. 
+
+The icons were created by Mihaiciuc Bogdan and badly resized by me. 
+
