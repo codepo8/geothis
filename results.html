@@ -4,16 +4,21 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">  
   <title>Geo This popup</title>
 <style>
-html,body{background:#fff;color:#333;font-family:calibri,arial,sans-serif;}
 *{font-size:100%;margin:0;padding:0;}
-ol{margin:1em;}
-ol li{margin:0 0 .5em 1em;}
+html,body{background:#fff;color:#333;font-family:calibri,arial,sans-serif;width:480px;}
+ul{margin:1em 0;}
+ul li{margin:0 0 .5em 0;list-style:none;}
+li span{font-weight:bold;}
 #ft{clear:both;font-size:80%;color:#999;text-align:right;}
 h1{padding:0 10px 0 34px;background:url(icon-32.png) center left no-repeat #69c;-webkit-box-shadow: 5px 5px 7px rgba(33,33,33,.7);color:#fff;font-size:120%;font-weight:bold;line-height:32px;-webkit-border-radius:5px;}
 .locations img{-webkit-border-radius:10px;display:block;margin:1em 0;}
 #doc{width:400px;padding:2em;}
+ul li ul{position:absolute;left:-9999em;width:340px;font-size:90%;margin-left:1.2em;}
+ul li {cursor:pointer;}
+ul li.open ul{position:relative;left:0;}
 #geocontainer p{margin:2em 0;font-weight:bold;}
 .error{color:#c00;}
+a{color:#369;}
 </style>
 </head>
 <body>
@@ -37,6 +42,7 @@ chrome.extension.onConnect.addListener(function(port) {
     } 
   });
 });
+var container = document.getElementById('geocontainer');
 function postgeo(selection,url){  
   if(url){
     var yql = 'select * from geo.placemaker where '+
@@ -56,12 +62,11 @@ function postgeo(selection,url){
     if (xhr.readyState == 4) {
       var resp = JSON.parse(xhr.responseText);
       var badge = render(resp);
-      var c = document.getElementById('geocontainer');
       if(badge!==''){
-        c.innerHTML = badge;
+        container.innerHTML = badge;
       } else {
-        c.innerHTML = '<p class="error">Sorry, can\'t find any '+
-                      'locations :(</p>';
+        container.innerHTML = '<p class="error">Sorry, can\'t find any '+
+                              'locations :(</p>';
       }
     }
   }
@@ -73,7 +78,7 @@ function render(data){
      data.query.results.matches.match){
     var results = data.query.results.matches.match;
     var markers = '';
-    var locs = '<ol>';
+    var locs = '<ul>';
     if(!results.length){
       addto(results,0);
     } else {
@@ -84,24 +89,38 @@ function render(data){
     var url = 'http://maps.google.com/maps/api/staticmap'+
               '?sensor=false'+
               '&size='+400+'x'+200+'&maptype=roadmap'+
-              '&key='+'ABQIAAAAijZqBZcz-rowoXZC1tt9iRT2yXp_'+
-              'ZAY8_ufC3CFXhHIE1NvwkxQQBCaF1R_k1GBJV5uDLhAKaTePyQ'+
                markers;
-    locs += '</ol>';
+    locs += '</ul>';
     badge = '<div class="locations">'+
             '<img src="'+url+'" alt="Map">'+locs+
             '</div>';
   }
   function addto(results,i){
-      var found = results.reference.text;
+      var marker = String.fromCharCode((i+65));
       var location = results.place.name;
+      var type = results.place.type;
+      var woeid = results.place.woeId;
       var lat = results.place.centroid.latitude;
       var lon = results.place.centroid.longitude;
-      markers += '&markers=color:blue|label:'+(i+1)+'|'+lat+','+lon;
-      locs += '<li>'+location+'</li>';
+      markers += '&markers=color:blue|label:'+
+                  marker+'|'+lat+','+lon;
+      locs += '<li><span>'+marker+': </span>'+
+              '<a href="http://maps.google.com/maps?q='+
+               location+'">'+location+'</a>'+
+              '<ul><li>Type: '+type+'</li>'+
+              '<li>Latitude, Longitude: '+lat+','+lon+'</li>'+
+              '<li>WOEID: '+woeid+'</li></ul></li>';
     }
   return badge;
 }
+container.addEventListener('click',function(e){
+  e.preventDefault();
+  var t = e.target;
+  if(t.nodeName.toLowerCase() === 'a'){
+    var p = t.parentNode;
+    p.className = p.className === 'open' ? '' : 'open';
+  }
+},false);
 </script>
 </body>
 </html>
